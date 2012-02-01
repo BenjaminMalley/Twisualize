@@ -3,3 +3,4 @@ bin/*
 lib/*
 local
 include/*
+config.py
