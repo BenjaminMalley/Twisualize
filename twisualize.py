@@ -1,7 +1,7 @@
 import oauth2 as oauth
 import config
 import urlparse
-from flask import Flask, redirect, url_for, session, render_template
+from flask import Flask, redirect, url_for, session, render_template, request
 from urllib import urlencode
 import time
 
@@ -25,29 +25,21 @@ def get_auth():
 
 @app.route('/success/')
 def get_token():
+
 	if 'request_token' in session.keys():
-		session['authorization_token'] = oauth.Token(session['request_token']['oauth_token'],
+		auth_token = oauth.Token(session['request_token']['oauth_token'],
 			session['request_token']['oauth_token_secret'])
-		
-		client = oauth.Client(app.consumer, session['authorization_token'])
-		
+
+		client = oauth.Client(app.consumer, auth_token)
 		resp, content = client.request(config.AUTH_URL+'access_token', 'GET')
-		if resp['status'] != '200': raise Exception('uh oh')
+		if resp['status'] != '200': raise Exception('oh my!')
 
 		session['access_token'] = dict(urlparse.parse_qsl(content))
-		
-		request_url = 'https://api.twitter.com/1/statuses/user_timeline.json?user_id={0}&include_entities=false'.format(
+
+		request_url = 'https://api.twitter.com/1/statuses/user_timeline.json?screen_name={0}&include_entities=false'.format(
 			session['access_token']['screen_name'])
-		token = oauth.Token(key=session['access_token']['oauth_token'], secret=session['access_token']['oauth_token_secret'])
-		
-		#req = oauth.Request(method='GET', url=request_url, parameters={
-		#	'oauth_version': '1.0',
-		#	'oauth_nonce': oauth.generate_nonce(),
-		#	'oauth_timestamp': int(time.time()),
-		#	'oauth_token': token.key,
-		#	'oauth_consumer_key': app.consumer.key,
-		#})
-		#req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), app.consumer, token)
+		token = oauth.Token(key=session['access_token']['oauth_token'],
+			secret=session['access_token']['oauth_token_secret'])
 		
 		client = oauth.Client(app.consumer, token)
 		
