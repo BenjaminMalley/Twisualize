@@ -1,11 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Yeah!</title>
-</head>
-<body>
-{% for tweet in tweets %}
-<p>{{ tweet }}</p>
-{% endfor %}
-</body>
-</html>
+{% extends "base.html" %}
+{% block head %}
+<script type='text/javascript'>
+$(document).ready(function() {
+	$.get('/data/', function(data) {
+		$('#when_data').text(data);
+	});
+});
+</script>
+{% endblock %}
+{% block body %}
+<div id='vis'>
+	<div id='when'>
+	When you tweet
+		<div id='when_data'>
+		</div>
+	</div>
+	<div id='where'>
+	Where you tweet
+	</div>
+	<div id='why'>
+	Why you tweet
+	</div>
+</div>
+{% endblock %}
