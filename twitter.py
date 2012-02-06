@@ -16,12 +16,22 @@ class User():
 		return [(t.timestamp-offset) for t in self.tweets]
 
 	@property
-	def tweets_by_month(self):
-		tbm = {}
+	def monthly(self):
+		years = {}
 		for tweet in self.tweets:
-			d = (tweet.time.year,tweet.time.month)
-			tbm[d] = tbm.get(d, 0) + 1
-		return [(key[0], key[1], tbm[key]) for key in sorted(tbm.keys())]
+			# initialize a list of 12 elements to account for zero-tweet months
+			years[tweet.time.year] = years.get(tweet.time.year, [0]*12)
+			years[tweet.time.year][tweet.time.month - 1] += 1
+		# jsonize it
+		return [{"year":year, "values":years[year]} for year in sorted(years.keys())]
+
+	@property
+	def hourly(self):
+		hours = [0]*24
+		for tweet in self.tweets:
+			hours[tweet.time.hour] += 1
+		return hours
+
 
 class Tweet():
 
@@ -33,7 +43,6 @@ class Tweet():
 	@property
 	def timestamp(self):
 		return time.mktime(self.time.timetuple())
-
 
 def get_timezone(name):
 	'''Twitter doesn't return the Olson names for the timezones,
@@ -62,4 +71,4 @@ def process_tweets(tweets):
 
 if __name__=='__main__':
 	user = process_tweets(json.loads(open('tweets', 'r').readline()))
-	print user.tweets_by_month
+	print user.monthly
