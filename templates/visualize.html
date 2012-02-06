@@ -1,19 +1,90 @@
 {% extends "base.html" %}
 {% block head %}
 <script type='text/javascript'>
+//for development, we'll use this version to prevent static file caching
 $(document).ready(function() {
-	$.get('/data/', function(data) {
-		$('#when_data').text(data);
+	var h = 100;
+	// retrieve the username from the cookie
+	var user = (function(name) {
+		var result = document.cookie.match ( '(^|;) ?' + name + '=([^;]*)(;|$)' );
+		if (result) {
+			return (unescape(result[2]));
+		} else {
+			return null;
+		}
+	})('user');
+	$.getJSON('/data/'+user+'/monthly/', function(data) {
+		var new_data = (function(d) { 
+			var year = [];
+			var values = [];
+			for(var i in d) {
+				year = year.concat(d[i].year);
+				values = values.concat(d[i].values);
+			}
+			return [year, values];
+		})(data);
+		var year = new_data[0];
+		var values = new_data[1];
+		var y = d3.scale.linear()
+			.domain([0, d3.max(values)])
+			.range([0, h]);
+		var chart = d3.select('#when').append('svg')
+			.attr('class', 'chart')
+			.attr('width', 20*values.length)
+			.attr('height', h);
+		chart.selectAll('rect')
+			.data(values)
+			.enter().append('rect')
+				.attr('width', 20)
+				.attr('height', function(d) { return y(d); })
+				.attr('y', function(d) { return h - y(d); })
+				.attr('x', function(d,i) { return i*20; });
+		var legend = d3.select('#when').append('svg')
+			.attr('class', 'legend')
+			//.attr('class', 'chart')
+			.attr('width', 20*values.length)
+			.attr('height', 20);
+		legend.selectAll('line')
+			.data(year)
+			.enter().append('line')
+				.attr('x1', function(d,i) { return i*20*12 + 2; })
+				.attr('x2', function(d,i) { return (i+1)*20*12 -2; })
+				.attr('y1', 1)
+				.attr('y2', 1)
+				.attr('stroke', 'black');
+		legend.selectAll('text')
+			.data(year)
+			.enter().append('text')
+				.attr('y', 14)
+				.attr('x', function(d,i) { return i*20*12 + 120; })
+				.attr('text-anchor', 'middle')
+				.text(String);
+			
+	});
+	$.getJSON('/data/'+user+'/hourly/', function(data) {
+		var y = d3.scale.linear()
+			.domain([0, d3.max(data)])
+			.range([0, h]);
+		var chart = d3.select('#when').append('svg')
+			.attr('class', 'chart')
+			.attr('width', 20 * data.length)
+			.attr('height', h);
+		chart.selectAll('rect')
+			.data(data)
+			.enter().append('rect')
+				.attr('width', 20)
+				.attr('height', function(d) { return y(d); })
+				.attr('y', function(d) { return h - y(d); })
+				.attr('x', function(d, i) { return i*20; });
 	});
 });
+
 </script>
 {% endblock %}
 {% block body %}
-<div id='vis'>
+<div id='container'>
 	<div id='when'>
 	When you tweet
-		<div id='when_data'>
-		</div>
 	</div>
 	<div id='where'>
 	Where you tweet
